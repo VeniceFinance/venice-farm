@@ -1,0 +1,59 @@
+质押Lp:
+MasterChef: 0x8315672444e6245abF153633c76d01c01e8E4a7e
+
+方法：
+
+deposit(uint256 _pid, uint256 _amount)  质押Lp
+withdraw(uint256 _pid, uint256 _amount)  提取Lp
+pendingVeni(uint256 _pid, address _user)  目前质押得到的收益
+
+emergencyWithdraw(uint256 _pid)  不涉及收益安全退出 （不开放此方法）
+claim(uint256[] calldata _pids) 提取收益进入 质押VENI 锁定区域
+
+
+
+质押VENI:
+VeniStaker: 0x825FEE0fdb11B2874aA6F9D2b1663c3FD4d36908
+
+方法：
+
+stake(uint256 amount, bool lock)  质押VENI  lock代表是否锁定本金
+withdraw(uint256 amount) 提取收益 + 本金（仅 VENI 部分）
+getReward() 提取收益 （仅 BUSD 部分）
+exit() 提取本金 + 收益 （如果收益未解锁则按规则扣除）
+withdrawExpiredLocks() 提取已经解锁的本金(包含Lp处获得的收益)
+withdrawableBalance(address user)  returns (uint256 amount, uint256 penaltyAmount)  计算可领取和被扣除的收益
+
+质押锁定的
+function lockedBalances(
+        address user
+    ) view external returns (
+        uint256 total,        // 质押总锁定量
+        uint256 unlockable,   // 解锁量
+        uint256 locked,       // 锁定量
+        LockedBalance[] memory lockData。 // 解锁详情
+    )
+
+收益已解锁余额
+function earnedBalances(
+        address user
+    ) view external returns (
+        uint256 total,  //收益总量
+        LockedBalance[] memory earningsData //收益解锁详情
+    )
+	
+unlockedBalance(address user) returns (uint256 amount) //已解锁收益余额
+
+claimableRewards(address account) returns (RewardData[] memory rewards) //查询收益
+
+totalBalance(address user)  returns (uint256 amount) //总质押
+
+getRewardForDuration(address _rewardsToken)  returns (uint256) 根据币种计算周利率
+
+rewardPerToken(address _rewardsToken)  returns (uint256) 根据币种计算每股利率
+
+开发者使用:
+addReward(address _rewardsToken, address _distributor) 增加收益币种
+approveRewardDistributor(address _rewardsToken, address _distributor, bool _approved) //开启或者关闭收益币种
+notifyRewardAmount(address _rewardsToken, uint256 reward) 外部转入收益
+recoverERC20(address tokenAddress, uint256 tokenAmount) 从合约中提取

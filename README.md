@@ -1,1 +1,88 @@
 # venice-farm
+
+# forge testnet
+### chain
+```
+  CHAINID: 525 
+  RPC: https://prod-forge.prod.findora.org:8545
+  EXPLORER: http://blockscout.prod.findora.org/
+```
+
+### venice swap info (from Andy Lu) 
+```
+ INIT_CODE_PAIR_HASH: 580147a0774efb9e5ce160d4a36cdcb2814668e1899bc0a137b1fdb0fbe28f0c
+ ROUTER: 0xbb8d99bFDeF77f53D5ee6375Ca2895AFED520363
+ FACTORY: 0x5E50395cD465Eb04f8ef780258d233A75Ce239dB
+ WFRA: 0x27f9AcDBf683903646e1Ea36187f845493278Ab3
+```
+
+### test token (from Andy Lu)
+#### token minter
+```
+ MNEMONIC: toss debris tool gesture trust hybrid cute sense spirit wide cave wrestle
+ ADDRESS: 0x38c3DbED166efA60a04019c77e28cDF1fda927b9
+ PRIVATE KEY: 85350adb394f8da962ec93b1c9712b55225914e2ad91a2de88b09f3b3bb07190
+```
+#### tokens
+```
+ USDT: 0x287859aBcDb70A9cA96b39A985F8c26e1369f27e
+ BUSD: 0xDc4c479d104E63619c28326C5616F52858FC888D     decimals: 6
+ BTCB: 0xaD99fB7B3Dc08A9c4091011053E6572c42418BfF
+ BETH: 0xB3707148Ea11212576d713a840D0ca1cF564DA5c     decimals: 6
+ USDC: 0x5C8d4E325779f8b9B37E55FC5bCE5488624734c2
+ DAI: 0x9ff098e601E4a02F272EC12913Ef93E71a3Fe8E4
+ CAKE: 0x56a110Daa46Bcf94B560ade3c83bb29C8ed4E881
+ DOT: 0x66Bee82Be0f5d88B51109e15522a87B265edd457
+ LTC: 0x835C3C004c187DBa43185FCb47d73CAB72cb82E2
+ DOGE: 0xa46125DC6238CAF1b4A0737204FFb25eD0aDB104
+ QSD: 0x311C68aCeC72A61AABB06BA0deA2e6b0c1Cd068C
+```
+
+### test pair (from Andy Lu)
+```
+ USDT-BUSD: 0x72Fb512ACa9317e661d3771a311aFc74BB599c57
+ USDT-WFRA: 0xB416aD90BD04a1070BD8fEaEA4365dbDc9a5DE75
+ BUSD-WFRA: 0xeAb5137855Bc67d33f56865940a435Ca70bCD298
+ DAI-WFRA: 0x10f30d251c158105fA0B9CACd2db51D235A9EcD5
+ DOT-WFRA: 0x36035D312D6eCFD3EF84313AAF57De2288F63d4D
+ LTC-WFRA: 0x7E4eA6869D454CDF1772378d82ad387eE13efa79
+ DOGE-WFRA: 0x923dD0a6b8002C25fb1441bdc3C3f369735d47FF
+ QSD-WFRA: 0xA293f52F8e8EaDAA2eAf01F10b77eBd966367E74
+```
+
+### venice farm info (from Andy Lu) 
+#### Reward Token
+```
+VENICE(VCE): 0xAE61762acb0d292fd044C142AEaF8AA084eE64a9
+```
+#### farm info
+```
+MULTICALL: 0x2B6e777AB2240388cAD4b0085f4c66A48dC5CABb
+MASTERCHEF: 0xAE61762acb0d292fd044C142AEaF8AA084eE64a9
+DEVADDR: 0x71819C78cc5c33A37460eE681ef39f98bfb4e5BA
+VOEPERBLOCK: 10000000000000000000
+STARTBLOCK: 183309
+PID0: VCE  ALLOCPOINT: 1000
+PID1: DOT-WFRA  ALLOCPOINT: 500 
+PID2: LTC-WFRA  ALLOCPOINT: 600 
+PID3: DOGE-WFRA  ALLOCPOINT: 700
+PID4: BUSD-WFRA  ALLOCPOINT: 800
+```
+
+### graph-node server info (from BingMao Wu)
+```
+ HTTP: http://dev-thegraph-001.dev.findora.org:8000/
+ WEBSOCKETS: ws://dev-thegraph-001.dev.findora.org:8001/
+ JSON-RPC: http://dev-thegraph-001.dev.findora.org:8020/
+ GRAPHIQL: http://dev-thegraph-001.dev.findora.org:8030/graphql/playground
+ METRICS: http://dev-thegraph-001.dev.findora.org:8040/
+ IPFS: http://dev-thegraph-001.dev.findora.org:5001
+ IPFS WEBUI: http://dev-thegraph-001.dev.findora.org:5001/webui
+ IPFS GATEWAY: http://dev-thegraph-001.dev.findora.org:5080
+```
+### block and info client (from Andy Lu) 
+```
+API: http://dev-thegraph-001.dev.findora.org:8000/subgraphs/name/findora/venice
+METHOD: post
+PARAM: QL
+```
