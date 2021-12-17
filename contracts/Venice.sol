@@ -53,4 +53,20 @@ contract Venice is ERC20Burnable, Ownable{
         require(isMinter(msg.sender), "Venice: caller is not the minter");
         _;
     }
+
+    // deflationary related
+    uint256 public burnRate;
+    uint265 public constant MAX_BURN_RATE = 100;
+
+    function setTransferBurnRate(uint256 _rate) public onlyOwner {
+        require(burnRate <= MAX_BURN_RATE, "BurnRate out of limit");
+        burnRate = _rate;
+    }   
+
+    function _transfer(address sender, address recipient, uint256 amount) internal override {
+        uint256 fee = amount.mul(burnRate).div(10000);
+
+        _burn(sender, fee);
+        super._transfer(sender, recipient, amount.sub(fee));
+    }
 }
