@@ -10,7 +10,7 @@ contract Venice is ERC20Burnable, Ownable{
 
     EnumerableSet.AddressSet private _minters;
 
-    uint256 private constant maxSupply = 100000000 * 1e18;     // the total supply
+    uint256 private constant maxSupply = 1000000000 * 1e18;     // the total supply
 
     event NewMinter(address indexed _operator, address indexed _newMinter);
 
