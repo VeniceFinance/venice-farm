@@ -2,7 +2,6 @@
 pragma solidity ^0.6.12;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
@@ -56,7 +55,7 @@ contract Venice is ERC20Burnable, Ownable{
 
     // deflationary related
     uint256 public burnRate;
-    uint265 public constant MAX_BURN_RATE = 100;
+    uint256 public constant MAX_BURN_RATE = 100;
 
     function setTransferBurnRate(uint256 _rate) public onlyOwner {
         require(burnRate <= MAX_BURN_RATE, "BurnRate out of limit");
