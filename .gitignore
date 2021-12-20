@@ -1,6 +1,7 @@
 .idea/
 .env
 node_modules/
+scripts/
 
 build/
 .DS_Store
