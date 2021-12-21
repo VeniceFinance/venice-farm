@@ -66,6 +66,15 @@ contract VeniStaker is ReentrancyGuard, Ownable {
     mapping(address => LockedBalance[]) private userLocks;
     mapping(address => LockedBalance[]) private userEarnings;
 
+    // withdraw remain
+    uint256 public withdrawRatio;
+    // penalty share
+    uint256 public penaltyRatio;
+    // treasury
+    uint256 public treasuryRatio;
+    uint256 public totalRatio;
+    address public treasuryAddress;
+
     /* ========== CONSTRUCTOR ========== */
 
     constructor(
@@ -82,6 +91,23 @@ contract VeniStaker is ReentrancyGuard, Ownable {
         for (uint i; i < _minters.length; i++) {
             minters[_minters[i]] = true;
         }
+    }
+
+    function setTreasuryAddress(
+        address _treasuryAddress
+    ) external onlyOwner {
+        treasuryAddress = _treasuryAddress;
+    }
+
+    function setRatios(
+        uint256 _withdrawRatio,
+        uint256 _penaltyRatio,
+        uint256 _treasuryRatio
+    ) external onlyOwner {
+        withdrawRatio = _withdrawRatio;
+        penaltyRatio = _penaltyRatio;
+        treasuryRatio = _treasuryRatio;
+        totalRatio = _withdrawRatio.add(_penaltyRatio).add(_treasuryRatio);
     }
 
     /* ========== ADMIN CONFIGURATION ========== */
@@ -235,7 +261,8 @@ contract VeniStaker is ReentrancyGuard, Ownable {
         address user
     ) view public returns (
         uint256 amount,
-        uint256 penaltyAmount
+        uint256 penaltyAmount,
+        uint256 treasuryAmount
     ) {
         Balances storage bal = balances[user];
         if (bal.earned > 0) {
@@ -249,11 +276,15 @@ contract VeniStaker is ReentrancyGuard, Ownable {
                 }
                 amountWithoutPenalty = amountWithoutPenalty.add(earnedAmount);
             }
-
-            penaltyAmount = bal.earned.sub(amountWithoutPenalty).div(2);
+            // penalty
+            uint256 amountSum = bal.earned.sub(amountWithoutPenalty);
+            if(totalRatio > 0){
+                penaltyAmount = amountSum.mul(penaltyRatio).div(totalRatio);
+                treasuryAmount = amountSum.mul(treasuryRatio).div(totalRatio);
+            }
         }
-        amount = bal.unlocked.add(bal.earned).sub(penaltyAmount);
-        return (amount, penaltyAmount);
+        amount = bal.unlocked.add(bal.earned).sub(penaltyAmount).sub(treasuryAmount);
+        return (amount, penaltyAmount, treasuryAmount);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -367,7 +398,7 @@ contract VeniStaker is ReentrancyGuard, Ownable {
 
     // Withdraw full unlocked balance and claim pending rewards
     function exit() external updateReward(msg.sender) {
-        (uint256 amount, uint256 penaltyAmount) = withdrawableBalance(msg.sender);
+        (uint256 amount, uint256 penaltyAmount, uint256 treasuryAmount) = withdrawableBalance(msg.sender);
         delete userEarnings[msg.sender];
         Balances storage bal = balances[msg.sender];
         bal.total = bal.total.sub(bal.unlocked).sub(bal.earned);
@@ -376,6 +407,10 @@ contract VeniStaker is ReentrancyGuard, Ownable {
 
         totalSupply = totalSupply.sub(amount.add(penaltyAmount));
         stakingToken.safeTransfer(msg.sender, amount);
+        if(treasuryAmount > 0){
+            require(treasuryAddress != address(0), "No treasuryAddress");
+            stakingToken.safeTransfer(treasuryAddress, amount);
+        }
         if (penaltyAmount > 0) {
             _notifyReward(address(stakingToken), penaltyAmount);
         }
