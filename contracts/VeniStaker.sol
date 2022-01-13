@@ -73,7 +73,17 @@ contract VeniStaker is ReentrancyGuard, Ownable {
     // treasury
     uint256 public treasuryRatio;
     uint256 public totalRatio;
-    address public treasuryAddress;
+    address public treasuryAddr;
+
+    event SetMinters(address indexed user, address[] minters);
+    event SetTreasuryAddr(address indexed user, address oldAddr, address newAddr);
+    event SetRatios(address indexed user, 
+        uint256 oldWithdrawRatio, uint256 newWithdrawRatio, 
+        uint256 oldPenaltyRatio, uint256 newPenaltyRatio, 
+        uint256 oldTreasuryRatio, uint256 newTreasuryRatio
+    );
+    event AddReward(address indexed user, address rewardsToken, address distributor);
+    event ApproveRewardDistributor(address indexed user, address rewardsToken, address distributor, bool approved);
 
     /* ========== CONSTRUCTOR ========== */
 
@@ -87,16 +97,18 @@ contract VeniStaker is ReentrancyGuard, Ownable {
         rewardData[_stakingToken].lastUpdateTime = block.timestamp;
     }
 
-    function setMinter(address[] calldata _minters) external onlyOwner {
+    function setMinters(address[] calldata _minters) external onlyOwner {
         for (uint i; i < _minters.length; i++) {
             minters[_minters[i]] = true;
         }
+        emit SetMinters(msg.sender, _minters);
     }
 
-    function setTreasuryAddress(
-        address _treasuryAddress
+    function setTreasuryAddr(
+        address _treasuryAddr
     ) external onlyOwner {
-        treasuryAddress = _treasuryAddress;
+        emit SetTreasuryAddr(msg.sender, treasuryAddr, _treasuryAddr);
+        treasuryAddr = _treasuryAddr;
     }
 
     function setRatios(
@@ -104,6 +116,11 @@ contract VeniStaker is ReentrancyGuard, Ownable {
         uint256 _penaltyRatio,
         uint256 _treasuryRatio
     ) external onlyOwner {
+        emit SetRatios(msg.sender, 
+            withdrawRatio, _withdrawRatio, 
+            penaltyRatio, _penaltyRatio, 
+            treasuryRatio, _treasuryRatio
+        );
         withdrawRatio = _withdrawRatio;
         penaltyRatio = _penaltyRatio;
         treasuryRatio = _treasuryRatio;
@@ -125,6 +142,7 @@ contract VeniStaker is ReentrancyGuard, Ownable {
         rewardData[_rewardsToken].lastUpdateTime = block.timestamp;
         rewardData[_rewardsToken].periodFinish = block.timestamp;
         rewardDistributors[_rewardsToken][_distributor] = true;
+        emit AddReward(msg.sender, _rewardsToken, _distributor);
     }
 
     // Modify approval for an address to call notifyRewardAmount
@@ -135,6 +153,7 @@ contract VeniStaker is ReentrancyGuard, Ownable {
     ) external onlyOwner {
         require(rewardData[_rewardsToken].lastUpdateTime > 0);
         rewardDistributors[_rewardsToken][_distributor] = _approved;
+        emit ApproveRewardDistributor(msg.sender, _rewardsToken, _distributor, _approved);
     }
 
     /* ========== VIEWS ========== */
@@ -408,8 +427,8 @@ contract VeniStaker is ReentrancyGuard, Ownable {
         totalSupply = totalSupply.sub(amount.add(penaltyAmount));
         stakingToken.safeTransfer(msg.sender, amount);
         if(treasuryAmount > 0){
-            require(treasuryAddress != address(0), "No treasuryAddress");
-            stakingToken.safeTransfer(treasuryAddress, amount);
+            require(treasuryAddr != address(0), "No treasuryAddr");
+            stakingToken.safeTransfer(treasuryAddr, amount);
         }
         if (penaltyAmount > 0) {
             _notifyReward(address(stakingToken), penaltyAmount);

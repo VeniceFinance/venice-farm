@@ -37,8 +37,6 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
     uint256 public startTime;
     // VENI tokens created per second.
     uint256 public rewardsPerSecond;
-    // Bonus muliplier for early veni makers.
-    uint256 public BONUS_MULTIPLIER = 1;
     // Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // reward minter
@@ -53,9 +51,18 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
     // Info of each user that stakes LP tokens.
     mapping (uint256 => mapping (address => UserInfo)) public userInfo;
 
+    event AddPool(address indexed user, uint256 allocPoint, address lpToken, bool _withUpdate);
+    event SetPool(address indexed user, uint256 indexed pid, uint256 allocPoint, bool _withUpdate);
+    event Schedule(address indexed user, uint128[] startTimeOffset, uint128[] rewardsPerSecond);
+    event SetMinter(address indexed user, address oldMinter, address newMinter);
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+
+    modifier validatePoolByPid(uint256 _pid) {
+        require (_pid < poolInfo.length , "Pool does not exist") ; 
+        _;
+    }
 
     constructor(
         uint256 _rewardsPerSecond,
@@ -81,10 +88,11 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
             lastRewardTime: lastRewardTime,
             accVeniPerShare: 0
         }));
+        emit AddPool(msg.sender, _allocPoint, address(_lpToken), _withUpdate);
     }
 
     // Update the given pool's VENI allocation point. Can only be called by the owner.
-    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) external onlyOwner {
+    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) external onlyOwner validatePoolByPid(_pid) {
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -93,6 +101,7 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
         if (prevAllocPoint != _allocPoint) {
             totalAllocPoint = totalAllocPoint.sub(prevAllocPoint).add(_allocPoint);
         }
+        emit SetPool(msg.sender, _pid, _allocPoint, _withUpdate);
     }
 
     // Update reward variables for all pools. Be careful of gas spending!
@@ -104,7 +113,7 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
     }
 
     // Update reward variables of the given pool to be up-to-date.
-    function updatePool(uint256 _pid) public {
+    function updatePool(uint256 _pid) public validatePoolByPid(_pid) {
         PoolInfo storage pool = poolInfo[_pid];
         if (block.timestamp <= pool.lastRewardTime) {
             return;
@@ -133,11 +142,8 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
         }
     }
 
-    function updateMultiplier(uint256 multiplierNumber) external onlyOwner {
-        BONUS_MULTIPLIER = multiplierNumber;
-    }
-
     function setMinter(address _rewardMinter) external onlyOwner {
+        emit SetMinter(msg.sender, rewardMinter, _rewardMinter);
         rewardMinter = _rewardMinter;
     }
 
@@ -151,6 +157,7 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
                 })
             );
         }
+        emit Schedule(msg.sender, _startTimeOffset, _rewardsPerSecond);
     }
 
     function poolLength() external view returns (uint256) {
@@ -158,12 +165,12 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
     }
 
     // Return reward multiplier over the given _from to _to block.
-    function getMultiplier(uint256 _from, uint256 _to) public view returns (uint256) {
-        return _to.sub(_from).mul(BONUS_MULTIPLIER);
+    function getMultiplier(uint256 _from, uint256 _to) internal pure returns (uint256) {
+        return _to.sub(_from);
     }
 
     // View function to see pending VENICEs on frontend.
-    function pendingVeni(uint256 _pid, address _user) external view returns (uint256) {
+    function pendingVeni(uint256 _pid, address _user) external view validatePoolByPid(_pid) returns (uint256) {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accVeniPerShare = pool.accVeniPerShare;
@@ -177,7 +184,7 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
     }
 
     // Deposit LP tokens to MasterChef for VENI allocation.
-    function deposit(uint256 _pid, uint256 _amount) external whenNotPaused {
+    function deposit(uint256 _pid, uint256 _amount) external whenNotPaused nonReentrant validatePoolByPid(_pid) {
         require (block.timestamp >= startTime, 'not yet started');
         // require (_pid != 0, 'deposit VENI by staking');
 
@@ -199,7 +206,7 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
     }
 
     // Withdraw LP tokens from MasterChef.
-    function withdraw(uint256 _pid, uint256 _amount) external nonReentrant {
+    function withdraw(uint256 _pid, uint256 _amount) external nonReentrant validatePoolByPid(_pid) {
 
         // require (_pid != 0, 'withdraw VENI by unstaking');
         PoolInfo storage pool = poolInfo[_pid];
@@ -220,7 +227,7 @@ contract MasterChef is Ownable, Pausable, ReentrancyGuard {
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid) external {
+    function emergencyWithdraw(uint256 _pid) external validatePoolByPid(_pid) {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         pool.lpToken.safeTransfer(address(msg.sender), user.amount);
