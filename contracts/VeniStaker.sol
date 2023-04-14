@@ -60,6 +60,8 @@ contract VeniStaker is ReentrancyGuard, Ownable {
     uint256 public totalSupply;
     uint256 public lockedSupply;
 
+    uint256 public penaltyScale = 50;
+
     // Private mappings for balance data
     mapping(address => Balances) public balances;
     // 
@@ -69,6 +71,8 @@ contract VeniStaker is ReentrancyGuard, Ownable {
     mapping(address => uint256) private userEarningsStart;
     mapping(address => uint256) private userEarningsEnd;
     mapping(address => mapping(uint256 => LockedBalance)) private userEarnings;
+
+    uint256 public constant maxLockLength = 15;
 
     // penalty share
     uint256 public penaltyRatio;
@@ -267,7 +271,7 @@ contract VeniStaker is ReentrancyGuard, Ownable {
                 amountWithoutPenalty = amountWithoutPenalty.add(earnedAmount);
             }
             // penalty
-            realPenaltyAmount = penaltyAmount = bal.earned.sub(amountWithoutPenalty).div(2);
+            realPenaltyAmount = penaltyAmount = bal.earned.sub(amountWithoutPenalty).mul(penaltyScale).div(100);
             if(totalRatio > 0){
                 penaltyAmount = realPenaltyAmount.mul(penaltyRatio).div(totalRatio);
                 treasuryAmount = realPenaltyAmount.mul(treasuryRatio).div(totalRatio);
@@ -283,6 +287,7 @@ contract VeniStaker is ReentrancyGuard, Ownable {
     // Locked tokens cannot be withdrawn for lockDuration and are eligible to receive stakingReward rewards
     function stake(uint256 _amount, bool _lock) external nonReentrant updateReward(msg.sender) {
         require(_amount > 0, "Cannot stake 0");
+        require(userLocksEnd[msg.sender] - userLocksStart[msg.sender] < maxLockLength, 'exceeding maximum length');
         totalSupply = totalSupply.add(_amount);
         Balances storage bal = balances[msg.sender];
         bal.total = bal.total.add(_amount);
@@ -306,7 +311,8 @@ contract VeniStaker is ReentrancyGuard, Ownable {
     }
 
     // Withdraw all currently locked tokens where the unlock time has passed
-    function withdrawExpiredLocks() external {
+    function withdrawExpiredLocks() external nonReentrant {
+        require(userLocksEnd[msg.sender] == 0, 'not stake');
         Balances storage bal = balances[msg.sender];
         uint256 amount;
         if (userLocks[msg.sender][userLocksEnd[msg.sender] - 1].unlockTime <= block.timestamp) {
@@ -336,6 +342,7 @@ contract VeniStaker is ReentrancyGuard, Ownable {
     // withdrawn before lockDuration has passed.
     function chefStake(address _user, uint256 _amount) external updateReward(_user) {
         require(minters[msg.sender], 'not minter');
+        require(userEarningsEnd[_user] - userEarningsStart[_user] < maxLockLength, 'exceeding maximum length');
         totalSupply = totalSupply.add(_amount);
         Balances storage bal = balances[_user];
         bal.total = bal.total.add(_amount);
@@ -379,7 +386,7 @@ contract VeniStaker is ReentrancyGuard, Ownable {
                         delete userEarnings[msg.sender][i];
                         break;
                     }
-                    remaining = remaining.mul(2);
+                    remaining = remaining.mul(100).div(penaltyScale);
                 }
                 if(remaining == earnedAmount) {
                     if(i + 1 == userEarningsEnd[msg.sender]){
