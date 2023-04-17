@@ -312,7 +312,7 @@ contract VeniStaker is ReentrancyGuard, Ownable {
 
     // Withdraw all currently locked tokens where the unlock time has passed
     function withdrawExpiredLocks() external nonReentrant {
-        require(userLocksEnd[msg.sender] == 0, 'not stake');
+        require(userLocksEnd[msg.sender] - userLocksStart[msg.sender] > 0, 'no data');
         Balances storage bal = balances[msg.sender];
         uint256 amount;
         if (userLocks[msg.sender][userLocksEnd[msg.sender] - 1].unlockTime <= block.timestamp) {
